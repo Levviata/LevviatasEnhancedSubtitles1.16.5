@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.SubtitleOverlay;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEventListener;
 import net.minecraft.client.sounds.WeighedSoundEvents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -28,7 +29,7 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
 {
     private final Minecraft minecraft;
     private boolean isListening;
-    private static List<Subtitle> subtitles = Lists.newArrayList();
+    private static List<SubtitleOverlay.Subtitle> subtitles = Lists.newArrayList();
     public SubtitleOverlayGui(Minecraft minecraft) {
         super(minecraft);
         this.minecraft = minecraft;
@@ -36,13 +37,13 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
     static {
         Field subtitlesField = null;
         try {
-            subtitlesField = SubtitleOverlay.class.get("subtitles");
+            subtitlesField = SubtitleOverlay.class.getDeclaredField("field_184070_f");
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
         subtitlesField.setAccessible(true);
         try {
-            subtitles = (List<Subtitle>) subtitlesField.get(new SubtitleOverlay(Minecraft.getInstance()));
+            subtitles = (List<SubtitleOverlay.Subtitle>) subtitlesField.get(new SubtitleOverlay(Minecraft.getInstance()));
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -82,10 +83,10 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
             Vec3 vector3d3 = vector3d1.cross(vector3d2);
             int captionIndex = 0;
             int maxLength = 0;
-            Iterator<Subtitle> iterator = subtitles.iterator();
+            Iterator<SubtitleOverlay.Subtitle> iterator = subtitles.iterator();
 
             while(iterator.hasNext()) {
-                Subtitle subtitleoverlaygui$subtitle = iterator.next();
+                SubtitleOverlay.Subtitle subtitleoverlaygui$subtitle = iterator.next();
                 if (subtitleoverlaygui$subtitle.getTime() + 3000L <= Util.getMillis()) {
                     iterator.remove();
                 } else {
@@ -98,8 +99,8 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
                     this.minecraft.font.width(">") +
                     this.minecraft.font.width(" ");
 
-            for(Subtitle subtitle: subtitles) {
-                String caption = subtitle.getText();
+            for(SubtitleOverlay.Subtitle subtitle: subtitles) {
+                Component caption = subtitle.getText();
                 Vec3 vector3d4 = subtitle.getLocation().subtract(vector3d).normalize();
                 double d0 = -vector3d3.dot(vector3d4);
                 double d1 = -vector3d1.dot(vector3d4);
@@ -144,44 +145,17 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
         if (arg2.getSubtitle() == null) {
             return;
         }
-        String text = String.valueOf(arg2.getSubtitle());
+        Component text = arg2.getSubtitle();
         if (!subtitles.isEmpty()) {
-            for (Subtitle caption : subtitles) {
+            for (SubtitleOverlay.Subtitle caption : subtitles) {
                 if (!caption.getText().equals(text)) continue;
                 caption.refresh(new Vec3(arg.getX(), arg.getY(), arg.getZ()));
                 return;
             }
         }
-        subtitles.add(new Subtitle(text, new Vec3(arg.getX(), arg.getY(), arg.getZ())));
-    }
-    @OnlyIn(value=Dist.CLIENT)
-    public class Subtitle {
-        private final String text;
-        private long time;
-        private Vec3 location;
-
-        public Subtitle(String arg2, Vec3 arg3) {
-            this.text = arg2;
-            this.location = arg3;
-            this.time = Util.getMillis();
-        }
-
-        public String getText() {
-            return this.text;
-        }
-
-        public long getTime() {
-            return this.time;
-        }
-
-        public Vec3 getLocation() {
-            return this.location;
-        }
-
-        public void refresh(Vec3 arg) {
-            this.location = arg;
-            this.time = Util.getMillis();
-        }
+        SubtitleOverlay subtitleOverlay = new SubtitleOverlay(minecraft);
+        SubtitleOverlay.Subtitle subtitle = subtitleOverlay.new Subtitle(text, new Vec3(arg.getX(), arg.getY(), arg.getZ()));
+        subtitles.add(subtitle);
     }
 }
 
