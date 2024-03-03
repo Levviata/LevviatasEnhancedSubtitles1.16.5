@@ -9,7 +9,7 @@ version = "${version}"
 displayName = "Levviata's Enhanced Subtitles"
 authors = "Me!"
 description = '''
-This is an example description! Tell everyone what your mod is about!
+Enhances base subtitles.
 '''
 #logoFile = ""
 
