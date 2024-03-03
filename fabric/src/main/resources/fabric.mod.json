@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "les",
+  "version": "${version}",
+  "name": "Levviata's Enhanced Subtitles",
+  "description": "This is an example description! Tell everyone what your mod is about!",
+  "authors": [
+    "Levviata"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.levviata.les.fabric.LESFabric"
+    ]
+  },
+  "mixins": [
+    "les-fabric.mixins.json",
+    "les-common.mixins.json"
+  ],
+  "depends": {
+    "fabric": "*",
+    "minecraft": ">=1.16.5",
+    "architectury": ">=1.32.68"
+  }
+}
