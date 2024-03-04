@@ -3,14 +3,18 @@ package net.les.forge.gui;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.les.forge.config.Config;
+import net.les.forge.util.ColorConverter;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.SubtitleOverlay;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEventListener;
 import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -26,13 +30,19 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.floor;
 import static java.lang.Math.log;
+import static net.les.forge.config.Config.scale;
+import static net.les.forge.config.Config.showSubtitles;
+import static net.les.forge.gui.SubtitleDragGui.isGuiOpen;
 import static net.minecraft.util.Mth.clampedLerp;
 
 public class SubtitleOverlayGui extends Gui implements SoundEventListener
 {
     private final Minecraft minecraft;
+    Logger log = Logger.getLogger("SubtitleOverlayGui");
     private boolean isListening;
-    private static List<SubtitleOverlay.Subtitle> subtitles = Lists.newArrayList();
+    private static final List<SubtitleOverlay.Subtitle> subtitles = Lists.newArrayList();
+    public static int lastPosX;
+    public static int lastPosY;
     public SubtitleOverlayGui(Minecraft minecraft) {
         super(minecraft);
         this.minecraft = minecraft;
@@ -59,9 +69,8 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
         if (event.getType() == RenderGameOverlayEvent.ElementType.SUBTITLES) {
             event.setCanceled(true); // This prevents the default subtitle rendering.
             PoseStack stack = event.getMatrixStack();
-
-            SubtitleOverlayGui subtitleOverlayGui = new SubtitleOverlayGui(Minecraft.getInstance());
-            subtitleOverlayGui.render(stack);
+                SubtitleOverlayGui subtitleOverlayGui = new SubtitleOverlayGui(Minecraft.getInstance());
+                subtitleOverlayGui.render(stack);
         }
     }
 
@@ -109,36 +118,111 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
                 boolean flag = d1 > 0.5D;
                 int halfMaxLength = maxLength / 2;
 
-                int i1 = 9;
-                int SubtitleHeight = i1 / 2;
-
+                int subtitleHeight = this.minecraft.font.lineHeight / 2;
                 int subtitleWidth = this.minecraft.font.width(caption);
+
                 int fadeAwayCalculation = (int) floor(clampedLerp(255.0D, 75.0D, (double)((float)(Util.getMillis() - subtitle.getTime()) / 3000.0F)));
                 int fadeAway = fadeAwayCalculation << 16 | fadeAwayCalculation << 8 | fadeAwayCalculation;
+
+                int backgroundRed = Config.backgroundRed.get();
+                int backgroundGreen = Config.backgroundGreen.get();
+                int backgroundBlue = Config.backgroundBlue.get();
+
+                int fontRed = Config.fontRed.get();
+                int fontGreen = Config.fontGreen.get();
+                int fontBlue = Config.fontBlue.get();
+
+                int backgroundAlpha = Config.backgroundAlpha.get();
+
+                int backgroundColor = ColorConverter.colorToDecimal(backgroundRed, backgroundGreen, backgroundBlue);
+                int fontColor = ColorConverter.colorToDecimal(fontRed, fontGreen, fontBlue);
+
                 RenderSystem.pushMatrix();
 
-                //RenderSystem.translatef((float)this.minecraft.getWindow().getGuiScaledWidth() - (float) halfMaxLength - 2.0F, (float)(this.minecraft.getWindow().getGuiScaledHeight() - 30) - (float) (captionIndex * (i1 + 1)), 0.0F);
+                Minecraft minecraft = Minecraft.getInstance();
+                int resolutionX = minecraft.getWindow().getGuiScaledHeight();
+                int resolutionY = minecraft.getWindow().getGuiScaledWidth();
 
-                RenderSystem.translatef((float)this.minecraft.getWindow().getGuiScaledWidth(), (float)this.minecraft.getWindow().getGuiScaledHeight(), 0.0F);
+                String position = Config.overlayPosition.toString();
 
-                RenderSystem.scalef(1.0F, 1.0F, 1.0F);
+                int verticalSpacing = 1;
+                int horizontalSpacing = 2;
+                int subtitleSpacing = 10 * scale.get();
+                int xPos = Config.xPosition.get();
+                int yPos = Config.yPosition.get();
 
-                fill(stack, -halfMaxLength - 1, -SubtitleHeight - 1, halfMaxLength + 1, SubtitleHeight + 1, this.minecraft.options.getBackgroundColor(0.8F));
+
+                    // ... existing switch statement ...
+                switch (position) {
+                    case "BOTTOM_CENTER":
+                        xPos += resolutionX / 2;
+                        yPos += (resolutionY - 75) - (captionIndex * subtitleSpacing);
+                        log.info("bottom center");
+                        break;
+                    case "BOTTOM_LEFT":
+                        xPos += halfMaxLength + horizontalSpacing;
+                        yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                        log.info("bottom left");
+                        break;
+                    case "CENTER_LEFT":
+                        xPos += halfMaxLength + horizontalSpacing;
+                        yPos += (resolutionY / 2) - (((subtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
+                        log.info("center left");
+                        break;
+                    case "TOP_LEFT":
+                        xPos += halfMaxLength + horizontalSpacing;
+                        yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                        log.info("top left");
+                        break;
+                    case "TOP_CENTER":
+                        xPos += resolutionX / 2;
+                        yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                        log.info("top center");
+                        break;
+                    case "TOP_RIGHT":
+                        xPos += resolutionY - halfMaxLength - 2;
+                        yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                        log.info("top right");
+                        break;
+                    case "CENTER_RIGHT":
+                        xPos += resolutionX - halfMaxLength - horizontalSpacing;
+                        yPos += (resolutionY / 2) - (((subtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
+                        log.info("center right");
+                        break;
+                    default: //if there's any invalid input just show it in the bottom right
+                        /*xPos += resolutionX - halfMaxLength - 2;
+                        yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);*/
+                        xPos += resolutionX;
+                        yPos += resolutionY;
+                        log.info("bottom right");
+                        break;
+                }
+
+                xPos = Mth.clamp(xPos, 0, resolutionX - (subtitleWidth / 2));
+                yPos = Mth.clamp(yPos, 0, resolutionY - (subtitleHeight));
+
+                log.info("xPos: " + xPos + " yPos: " + yPos);
+                RenderSystem.translatef(xPos, yPos, 0.0F);
+
+                RenderSystem.scalef(scale.get(), scale.get(), 1.0F);
+                log.info("scale: " + scale.get());
+
+                fill(stack, -halfMaxLength - 1, -subtitleHeight - 1, halfMaxLength + 1, subtitleHeight + 1,
+                        255 << 24 | backgroundColor);
                 RenderSystem.enableBlend();
 
                 if (!flag) {
                     if (d0 > 0.0D) {
-                        this.minecraft.font.draw(stack, ">", (float)(halfMaxLength - this.minecraft.font.width(">")), (float)(-SubtitleHeight), fadeAway + -16777216);
+                        this.minecraft.font.draw(stack, ">", (float)(halfMaxLength - this.minecraft.font.width(">")), (float)(-subtitleHeight), fadeAway + fontColor);
                     } else if (d0 < 0.0D) {
-                        this.minecraft.font.draw(stack, "<", (float)(-halfMaxLength), (float)(-SubtitleHeight), fadeAway + -16777216);
+                        this.minecraft.font.draw(stack, "<", (float)(-halfMaxLength), (float)(-subtitleHeight), fadeAway + fontColor);
                     }
                 }
 
-                this.minecraft.font.draw(stack, caption, (float)(-subtitleWidth / 2), (float)(-SubtitleHeight), fadeAway + -16777216);
+                this.minecraft.font.draw(stack, caption, (float)(-subtitleWidth / 2), (float)(-subtitleHeight), fadeAway + fontColor);
                 RenderSystem.popMatrix();
                 ++captionIndex;
             }
-
             RenderSystem.disableBlend();
             RenderSystem.popMatrix();
         }

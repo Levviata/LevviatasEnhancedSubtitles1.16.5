@@ -1,3 +1,5 @@
 {
-  "item.LES.example_item": "Example Item"
+  "item.LES.example_item": "Example Item",
+  "key.les_keybindings.desc": "Example Keybinding",
+  "key.les_keybindings.category": "Levviata's Enhanced Subtitles"
 }
