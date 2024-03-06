@@ -15,7 +15,6 @@ import net.minecraft.client.gui.components.SubtitleOverlay;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fml.client.gui.widget.Slider;
@@ -27,78 +26,20 @@ import java.util.logging.Logger;
 import static java.lang.Math.floor;
 import static java.lang.Math.min;
 import static net.les.forge.config.Config.*;
+import static net.les.forge.config.Config.OverlayPosition.*;
+import static net.les.forge.config.Config.OverlayPosition.BOTTOM_RIGHT;
 import static net.les.forge.gui.SubtitleOverlayGui.lastPosX;
 import static net.les.forge.gui.SubtitleOverlayGui.lastPosY;
 import static net.minecraft.util.Mth.clampedLerp;
 
 public class SubtitleDragGui extends Screen {
-    private Minecraft mc = Minecraft.getInstance();
     private boolean isButtonPressed = false;
     private static final List<SubtitleOverlay.Subtitle> previewSubtitles = Lists.newArrayList();
 
     static {
-        Component component0 = new Component() {
-            @Override
-            public Style getStyle() {
-                return null;
-            }
 
-            @Override
-            public String getContents() {
-                return "Example Subtitle";
-            }
-
-            @Override
-            public List<Component> getSiblings() {
-                return null;
-            }
-
-            @Override
-            public MutableComponent plainCopy() {
-                return null;
-            }
-
-            @Override
-            public MutableComponent copy() {
-                return null;
-            }
-
-            @Override
-            public FormattedCharSequence getVisualOrderText() {
-                return null;
-            }
-        };
-        Component component1 = new Component() {
-            @Override
-            public Style getStyle() {
-                return null;
-            }
-
-            @Override
-            public String getContents() {
-                return "Big ol' Example Subtitle";
-            }
-
-            @Override
-            public List<Component> getSiblings() {
-                return null;
-            }
-
-            @Override
-            public MutableComponent plainCopy() {
-                return null;
-            }
-
-            @Override
-            public MutableComponent copy() {
-                return null;
-            }
-
-            @Override
-            public FormattedCharSequence getVisualOrderText() {
-                return null;
-            }
-        };
+        Component component0 = new TextComponent("Example Subtitle");
+        Component component1 = new TextComponent("Bigggggggg ol' Example Subtitle");
         SubtitleOverlay subtitleOverlay = new SubtitleOverlay(Minecraft.getInstance());
         SubtitleOverlay.Subtitle subtitle0 = subtitleOverlay.new Subtitle(component0, new Vec3(0, 0, 0));
         previewSubtitles.add(subtitle0);
@@ -110,13 +51,17 @@ public class SubtitleDragGui extends Screen {
 
     public static boolean isGuiOpen = false;
     private boolean dragging;
-    private int lastMouseX;
-    private int lastMouseY;
+    private double lastMouseX;
+    private double lastMouseY;
     private boolean initialShowSubtitles;
     private int initialScale;
     private int initialBackgroundAlpha;
+    private Button scaleButton;
+    private Button alphaButton;
+    private Button showSubtitlesButton;
+    private Button resetValues;
 
-    private Logger logger = Logger.getLogger("SubtitleDragGui");
+    private final Logger logger = Logger.getLogger("SubtitleDragGui");
 
     public SubtitleDragGui(Component arg) {
         super(arg);
@@ -130,90 +75,41 @@ public class SubtitleDragGui extends Screen {
         initialShowSubtitles = showSubtitles.get();
         initialScale = scale.get();
         initialBackgroundAlpha = backgroundAlpha.get();
-        assert minecraft != null;
-        Window res = minecraft.getWindow();
+        Window res =  Minecraft.getInstance().getWindow();
 
+
+        Component modStatusText = new TextComponent("Mod Status: ")
+                .append(showSubtitles.get()
+                        ? new TextComponent("Enabled").withStyle(ChatFormatting.DARK_GREEN)
+                        : new TextComponent("Disabled").withStyle(ChatFormatting.DARK_RED)
+                );
         this.addButton(new Button(
-                this.width / 2 - 100, // x position
-                this.height / 2 - 20,
-                200, // width
+                Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 100,
+                Minecraft.getInstance().getWindow().getGuiScaledHeight() / 2 - 20,
+                200,
                 20,
-                new Component() {
-                    @Override
-                    public Style getStyle() {
-                        return null;
-                    }
+                modStatusText,
+                button -> {
+                    showSubtitles.set(!showSubtitles.get());
+                    SPEC.save();
+                    button.setMessage(new TextComponent("Mod Status: ")
+                            .append(showSubtitles.get()
+                                    ? new TextComponent("Enabled").withStyle(ChatFormatting.DARK_GREEN)
+                                    : new TextComponent("Disabled").withStyle(ChatFormatting.DARK_RED)
+                            ));
+                }
+        ));
+        Component scaleText = new TextComponent("Scale: ").append(String.valueOf(Config.scale.get()));
 
-                    @Override
-                    public String getContents() {
-                        return TextColor.fromLegacyFormat(ChatFormatting.YELLOW) + "Mod Status: " +
-                                (showSubtitles.get() ?
-                                        TextColor.fromLegacyFormat(ChatFormatting.DARK_GREEN) + "Enabled" :
-                                        TextColor.fromLegacyFormat(ChatFormatting.DARK_RED) + "Disabled");
-                    }
-
-                    @Override
-                    public List<Component> getSiblings() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent plainCopy() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent copy() {
-                        return null;
-                    }
-
-                    @Override
-                    public FormattedCharSequence getVisualOrderText() {
-                        return null;
-                    }
-                }, button -> {
-            showSubtitles.set(!showSubtitles.get());
-            SPEC.save();
-        }));
-
-        Button scale = new Slider(
-                this.width / 2 - 100, // x position
-                this.height / 2 - 20,
-                new Component() {
-                    @Override
-                    public Style getStyle() {
-                        return null;
-                    }
-
-                    @Override
-                    public String getContents() {
-                        return "Scale: " + Config.scale.get();
-                    }
-
-                    @Override
-                    public List<Component> getSiblings() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent plainCopy() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent copy() {
-                        return null;
-                    }
-
-                    @Override
-                    public FormattedCharSequence getVisualOrderText() {
-                        return null;
-                    }
-                },
+        scaleButton = new Slider(
+                Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 100,
+                Minecraft.getInstance().getWindow().getGuiScaledHeight() / 2 - 40,
+                scaleText,
                 0.5D,
                 10,
                 initialScale,
                 button -> {
+                    button.setMessage(new TextComponent("Scale: ").append(String.valueOf(Config.scale.get())));
                 },
                 new Slider.ISlider() {
                     @Override
@@ -224,148 +120,59 @@ public class SubtitleDragGui extends Screen {
                 }
         );
 
-        scale.setWidth(200);
-        buttons.add(scale);
+        scaleButton.setWidth(200);
+        buttons.add(scaleButton);
 
-        Button alpha = new Slider(
-                this.width / 2 - 100, // x position
-                this.height / 2 - 40,
-                new Component() {
-                    @Override
-                    public Style getStyle() {
-                        return null;
-                    }
-
-                    @Override
-                    public String getContents() {
-                        return "Alpha: " + Config.scale.get();
-                    }
-
-                    @Override
-                    public List<Component> getSiblings() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent plainCopy() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent copy() {
-                        return null;
-                    }
-
-                    @Override
-                    public FormattedCharSequence getVisualOrderText() {
-                        return null;
-                    }
-                },
+        Component alphaText = new TextComponent("Alpha: ").append(String.valueOf(backgroundAlpha.get()));
+        alphaButton = new Slider(
+                Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 100,
+                Minecraft.getInstance().getWindow().getGuiScaledHeight() / 2 - 60,
+                alphaText,
                 0.5D,
                 10,
                 initialScale,
                 button -> {
-                },
+                button.setMessage(new TextComponent("Alpha: ").append(String.valueOf(backgroundAlpha.get())));
+                    },
                 new Slider.ISlider() {
                     @Override
                     public void onChangeSliderValue(Slider slider) {
-                        Config.scale.set((int) slider.getValue());
+                        Config.backgroundAlpha.set((int) slider.getValue());
                         SPEC.save();
                     }
                 }
         );
 
-        alpha.setWidth(200);
-        buttons.add(alpha);
+        alphaButton.setWidth(200);
+        buttons.add(alphaButton);
 
-        this.addButton(new Button(
-                this.width / 2 - 100, // x position
-                this.height / 2 - 20,
+        Component resetText = new TextComponent("Reset Values To Default");
+        resetValues = new Button(
+                Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 100,
+                Minecraft.getInstance().getWindow().getGuiScaledHeight() / 2 - 80,
                 200, // width
                 20,
-                new Component() {
-                    @Override
-                    public Style getStyle() {
-                        return null;
-                    }
+                resetText,
+                button -> {
+                    button.setMessage(new TextComponent("Reset Values To Default"));
+                    double xPos;
+                    double yPos;
+                    xPos = lastPosX;
+                    yPos = lastPosY;
+                    xPosition.set(xPos);
+                    yPosition.set(yPos);
+                    int setAlpha = backgroundAlpha.get();
+                    boolean setShow = showSubtitles.get();
+                    int setScale = Config.scale.get();
 
-                    @Override
-                    public String getContents() {
-                        return TextColor.fromLegacyFormat(ChatFormatting.YELLOW) + "Reset Values To Default: ";
-                    }
-
-                    @Override
-                    public List<Component> getSiblings() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent plainCopy() {
-                        return null;
-                    }
-
-                    @Override
-                    public MutableComponent copy() {
-                        return null;
-                    }
-
-                    @Override
-                    public FormattedCharSequence getVisualOrderText() {
-                        return null;
-                    }
-                }, button -> {
-            button.setMessage(new Component() {
-                @Override
-                public Style getStyle() {
-                    return null;
+                    backgroundAlpha.set(setAlpha);
+                    showSubtitles.set(setShow);
+                    Config.scale.set(setScale);
+                    SPEC.save();
                 }
+        );
 
-                @Override
-                public String getContents() {
-                    return "Reset Values To Default";
-                }
-
-                @Override
-                public List<Component> getSiblings() {
-                    return null;
-                }
-
-                @Override
-                public MutableComponent plainCopy() {
-                    return null;
-                }
-
-                @Override
-                public MutableComponent copy() {
-                    return null;
-                }
-
-                @Override
-                public FormattedCharSequence getVisualOrderText() {
-                    return null;
-                }
-            });
-
-            // Reset values to default
-            int xPos;
-            int yPos;
-            xPos = lastPosX;
-            yPos = lastPosY;
-            xPosition.set(xPos);
-            yPosition.set(yPos);
-            int setAlpha = backgroundAlpha.get();
-            boolean setShow = showSubtitles.get();
-            int setScale = Config.scale.get();
-
-            backgroundAlpha.set(setAlpha);
-            showSubtitles.set(setShow);
-            Config.scale.set(setScale);
-            SPEC.save();
-
-            this.buttons.clear();
-            initGui();
-        }));
-
+        this.addButton(resetValues);
     }
 
         @Override
@@ -373,10 +180,28 @@ public class SubtitleDragGui extends Screen {
         if (button == 0) {
             for (AbstractWidget guiButton : buttons) {
                 if (guiButton.isMouseOver(mouseX, mouseY)) return true;
+                if (guiButton == resetValues)
+                {
+                    guiButton.setMessage(new TextComponent("Reset Values To Default"));
+                    double xPos;
+                    double yPos;
+                    xPos = lastPosX;
+                    yPos = lastPosY;
+                    xPosition.set(xPos);
+                    yPosition.set(yPos);
+                    int setAlpha = backgroundAlpha.get();
+                    boolean setShow = showSubtitles.get();
+                    int setScale = Config.scale.get();
+
+                    backgroundAlpha.set(setAlpha);
+                    showSubtitles.set(setShow);
+                    Config.scale.set(setScale);
+                    SPEC.save();
+                }
             }
             this.dragging = true;
-            this.lastMouseX = (int) mouseX;
-            this.lastMouseY = (int) mouseY;
+            this.lastMouseX = mouseX;
+            this.lastMouseY = mouseY;
         }
             return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -393,41 +218,43 @@ public class SubtitleDragGui extends Screen {
     public void mouseMoved(double mouseX, double mouseY) {
         super.mouseMoved(mouseX, mouseY);
         if (this.dragging) {
-            int diff = (int) (mouseX - this.lastMouseX);
-            int xPos = xPosition.get();
-            int yPos =  xPosition.get();
+            double diff = (mouseX - this.lastMouseX);
+            double xPos = xPosition.get();
+            double yPos =  yPosition.get();
             xPos = xPos + diff;
             xPosition.set(xPos);
-            yPos = (int) (yPos + (mouseY - this.lastMouseY));
+            yPos = (yPos + (mouseY - this.lastMouseY));
             Config.yPosition.set(yPos);
-            this.lastMouseX = (int) mouseX;
-            this.lastMouseY = (int) mouseY;
+            this.lastMouseX = mouseX;
+            this.lastMouseY = mouseY;
         }
     }
-
     @Override
     public void render(PoseStack stack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(stack);
+        super.render(stack, mouseX, mouseY, partialTicks);
+
         int captionIndex = 0;
         int maxLength = 0;
         Iterator<SubtitleOverlay.Subtitle> iterator = previewSubtitles.iterator();
 
         while(iterator.hasNext()) {
             SubtitleOverlay.Subtitle subtitleoverlaygui$subtitle = iterator.next();
-            assert minecraft != null;
-            maxLength = Math.max(maxLength, minecraft.font.width(previewSubtitles.get(1).getText()));
+            maxLength = Math.max(maxLength, Minecraft.getInstance().font.width(previewSubtitles.get(1).getText()));
         }
+
+        maxLength = maxLength + Minecraft.getInstance().font.width("<") +
+                Minecraft.getInstance().font.width(" ") +
+                Minecraft.getInstance().font.width(">") +
+                Minecraft.getInstance().font.width(" ");
         if (showSubtitles.get()) {
-
-
         for(SubtitleOverlay.Subtitle subtitle : previewSubtitles) {
             Component caption = subtitle.getText();
 
             int halfMaxLength = maxLength / 2;
 
-            assert this.minecraft != null;
-            int subtitleHeight = this.minecraft.font.lineHeight / 2;
-            int subtitleWidth = this.minecraft.font.width(caption);
+            int subtitleHeight = Minecraft.getInstance().font.lineHeight / 2;
+            int subtitleWidth =  Minecraft.getInstance().font.width(caption);
 
             int fadeAwayCalculation = (int) floor(clampedLerp(255.0D, 75.0D, (double)((float)(Util.getMillis() - subtitle.getTime()) / 3000.0F)));
             int fadeAway = fadeAwayCalculation << 16 | fadeAwayCalculation << 8 | fadeAwayCalculation;
@@ -447,68 +274,65 @@ public class SubtitleDragGui extends Screen {
 
             RenderSystem.pushMatrix();
 
-            Minecraft minecraft = Minecraft.getInstance();
-            int resolutionX = minecraft.getWindow().getGuiScaledHeight();
-            int resolutionY = minecraft.getWindow().getGuiScaledWidth();
+            int resolutionX = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+            int resolutionY = Minecraft.getInstance().getWindow().getGuiScaledHeight();
 
-            String position = Config.overlayPosition.toString();
+            Enum<?> position = Config.overlayPosition.get();
 
             int verticalSpacing = 1;
             int horizontalSpacing = 2;
             int subtitleSpacing = 10 * scale.get();
-            int xPos = Config.xPosition.get();
-            int yPos = Config.yPosition.get();
-            Logger log = Logger.getLogger("SubtitleConfigGui");
+            double xPos = Config.xPosition.get();
+            double yPos = Config.yPosition.get();
 
+            Logger log = Logger.getLogger("SubtitleOverlayDragGui");
             // ... existing switch statement ...
-            switch (position) {
-                case "BOTTOM_CENTER":
-                    xPos += resolutionX / 2;
-                    yPos += (resolutionY - 75) - (captionIndex * subtitleSpacing);
-                    log.info("bottom center");
-                    break;
-                case "BOTTOM_LEFT":
-                    xPos += halfMaxLength + horizontalSpacing;
-                    yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
-                    log.info("bottom left");
-                    break;
-                case "CENTER_LEFT":
-                    xPos += halfMaxLength + horizontalSpacing;
-                    yPos += (resolutionY / 2) - (((previewSubtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
-                    log.info("center left");
-                    break;
-                case "TOP_LEFT":
-                    xPos += halfMaxLength + horizontalSpacing;
-                    yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
-                    log.info("top left");
-                    break;
-                case "TOP_CENTER":
-                    xPos += resolutionX / 2;
-                    yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
-                    log.info("top center");
-                    break;
-                case "TOP_RIGHT":
-                    xPos += resolutionY - halfMaxLength - 2;
-                    yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
-                    log.info("top right");
-                    break;
-                case "CENTER_RIGHT":
-                    xPos += resolutionX - halfMaxLength - horizontalSpacing;
-                    yPos += (resolutionY / 2) - (((previewSubtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
-                    log.info("center right");
-                    break;
-                default: //if there's any invalid input just show it in the bottom right
-                    xPos += resolutionX - halfMaxLength - 2;
-                    yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
-                    log.info("bottom right");
-                    break;
+            //if there's any invalid input just show it in the bottom right
+            if (position.equals(BOTTOM_CENTER)) {
+                xPos += (double) resolutionX / 2;
+                yPos += (resolutionY - 75) - (captionIndex * subtitleSpacing);
+                log.info("bottom center");
+            } else if (position.equals(BOTTOM_LEFT)) {
+                xPos += halfMaxLength + horizontalSpacing;
+                yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                log.info("bottom left");
+            } else if (position.equals(MIDDLE_CENTER)) {
+                xPos += halfMaxLength + horizontalSpacing;
+                yPos += ((double) resolutionY / 2) - (((double) (previewSubtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
+                log.info("center left");
+            } else if (position.equals(TOP_LEFT)) {
+                xPos += halfMaxLength + horizontalSpacing;
+                yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                log.info("top left");
+            } else if (position.equals(TOP_CENTER)) {
+                xPos += (double) resolutionX / 2;
+                yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                log.info("top center");
+            } else if (position.equals(TOP_RIGHT)) {
+                xPos += resolutionY - halfMaxLength - 2;
+                yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                log.info("top right");
+            } else if (position.equals(MIDDLE_RIGHT)) {
+                xPos += resolutionX - halfMaxLength - horizontalSpacing;
+                yPos += ((double) resolutionY / 2) - (((double) (previewSubtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
+                log.info("center right");
+            } else if (position.equals(BOTTOM_RIGHT)) {
+                xPos += resolutionX - halfMaxLength - 2;
+                yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                log.info("bottom right");
+            } else {
+                //if there's any invalid input just show it in the bottom right
+                xPos += resolutionX - halfMaxLength - 2;
+                yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                log.info("Invalid Input: " + position);
             }
 
-            xPos = Mth.clamp(xPos, 0, resolutionX - (subtitleWidth / 2));
+
+            xPos = Mth.clamp(xPos, 0, resolutionX - ((double) subtitleWidth / 2));
             yPos = Mth.clamp(yPos, 0, resolutionY - (subtitleHeight));
 
             log.info("xPos: " + xPos + " yPos: " + yPos);
-            RenderSystem.translatef(xPos, yPos, 0.0F);
+            RenderSystem.translatef((float) xPos, (float) yPos, 0.0F);
 
             RenderSystem.scalef(scale.get(), scale.get(), 1.0F);
 
@@ -517,13 +341,11 @@ public class SubtitleDragGui extends Screen {
 
             RenderSystem.enableBlend();
 
-            this.minecraft.font.draw(stack, caption, (float)(-subtitleWidth / 2), (float)(-subtitleHeight), fadeAway + fontColor);
+            Minecraft.getInstance().font.draw(stack, caption, (float)(-subtitleWidth / 2), (float)(-subtitleHeight), fadeAway + fontColor);
             RenderSystem.popMatrix();
             ++captionIndex;
         }
         RenderSystem.disableBlend();
-        RenderSystem.popMatrix();
-        super.render(stack, mouseX, mouseY, partialTicks);
         }
     }
 

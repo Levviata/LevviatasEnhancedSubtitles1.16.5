@@ -11,10 +11,8 @@ public class Config {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.ConfigValue<Integer> example_integer;
-    public static final ForgeConfigSpec.ConfigValue<String> example_string;
-    public static final ForgeConfigSpec.ConfigValue<Integer> xPosition;
-    public static final ForgeConfigSpec.ConfigValue<Integer> yPosition;
+    public static final ForgeConfigSpec.ConfigValue<Double> xPosition;
+    public static final ForgeConfigSpec.ConfigValue<Double> yPosition;
     public static final ForgeConfigSpec.EnumValue<Config.OverlayPosition> overlayPosition;
     public static final ForgeConfigSpec.ConfigValue<Integer> backgroundRed;
     public static final ForgeConfigSpec.ConfigValue<Integer> backgroundGreen;
@@ -42,11 +40,8 @@ public class Config {
     static {
         BUILDER.push("Levviata's Enhanced Subtitles Configuration");
 
-        example_integer = BUILDER.comment("This is an integer. Default value is 3.").define("Example Integer", 3);
-        example_string = BUILDER.comment("This is a string. Default value is \"Cy4\".").define("Example String", "Cy4");
-
-        xPosition = BUILDER.comment("This is the x offset of the subtitle. Default value is 0.").defineInRange("X Position", 0, -1000, 1000);
-        yPosition = BUILDER.comment("This is the y offset of the subtitle. Default value is 0.").defineInRange("Y Position", 0, -1000, 1000);
+        xPosition = BUILDER.comment("This is the x offset of the subtitle. Default value is 0.").defineInRange("X Position", 0D, -1000D, 1000D);
+        yPosition = BUILDER.comment("This is the y offset of the subtitle. Default value is 0.").defineInRange("Y Position", 0D, -1000D, 1000D);
 
         overlayPosition = BUILDER.comment("This is the position of the overlay. Default value is BOTTOM_RIGHT. \nValid values are TOP_LEFT, TOP_CENTER, TOP_RIGHT, MIDDLE_LEFT, MIDDLE_CENTER, MIDDLE_RIGHT, BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT.")
                 .defineEnum("Position", Enum.valueOf(OverlayPosition.class, BOTTOM_LEFT.toString()));

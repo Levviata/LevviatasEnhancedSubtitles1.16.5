@@ -1,5 +1,12 @@
 {
   "item.LES.example_item": "Example Item",
-  "key.les_keybindings.desc": "Example Keybinding",
-  "key.les_keybindings.category": "Levviata's Enhanced Subtitles"
+  "key.les_keybindings.desc": "Open Subtitle Config GUI",
+  "key.category.les_keybindings": "Levviata's Enhanced Subtitles",
+  "key.les_keybindings.open_gui": "Open Subtitle Config GUI",
+  "key.les_buttons.reset_defaults": "Reset Defaults",
+  "key.les_buttons.scale": "Scale: ",
+  "key.les_buttons.alpha": "Alpha: ",
+  "key.les_buttons.mod_status": "Mod Status: ",
+  "key.les_buttons.enabled": "Enabled",
+  "key.les_buttons.disabled": "Disabled"
 }

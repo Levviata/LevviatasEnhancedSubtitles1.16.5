@@ -29,6 +29,9 @@ dependencies {
     // Remove the next line if you don't want to depend on the API
     modApi "me.shedaniel:architectury-forge:${rootProject.architectury_version}"
 
+    implementation files('libs/panelstudio-0.2.4.jar')
+    implementation files('libs/panelstudio-mc16-forge-0.2.4.jar')
+
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
 }

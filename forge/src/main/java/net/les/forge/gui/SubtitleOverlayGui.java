@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.floor;
 import static java.lang.Math.log;
+import static net.les.forge.config.Config.OverlayPosition.*;
 import static net.les.forge.config.Config.scale;
 import static net.les.forge.config.Config.showSubtitles;
 import static net.les.forge.gui.SubtitleDragGui.isGuiOpen;
@@ -64,13 +65,15 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
         subtitles = value;
     }*/
 
-    @SubscribeEvent(receiveCanceled = true)
+    @SubscribeEvent
     public static void onRenderGameOverlay(RenderGameOverlayEvent.Pre event) {
         if (event.getType() == RenderGameOverlayEvent.ElementType.SUBTITLES) {
             event.setCanceled(true); // This prevents the default subtitle rendering.
             PoseStack stack = event.getMatrixStack();
+            if (!isGuiOpen) {
                 SubtitleOverlayGui subtitleOverlayGui = new SubtitleOverlayGui(Minecraft.getInstance());
                 subtitleOverlayGui.render(stack);
+            }
         }
     }
 
@@ -140,69 +143,64 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
                 RenderSystem.pushMatrix();
 
                 Minecraft minecraft = Minecraft.getInstance();
-                int resolutionX = minecraft.getWindow().getGuiScaledHeight();
-                int resolutionY = minecraft.getWindow().getGuiScaledWidth();
+                int resolutionX = minecraft.getWindow().getGuiScaledWidth();
+                int resolutionY = minecraft.getWindow().getGuiScaledHeight();
 
-                String position = Config.overlayPosition.toString();
+                Enum<?> position = Config.overlayPosition.get();
 
                 int verticalSpacing = 1;
                 int horizontalSpacing = 2;
                 int subtitleSpacing = 10 * scale.get();
-                int xPos = Config.xPosition.get();
-                int yPos = Config.yPosition.get();
+                double xPos = Config.xPosition.get();
+                double yPos = Config.yPosition.get();
 
 
                     // ... existing switch statement ...
-                switch (position) {
-                    case "BOTTOM_CENTER":
-                        xPos += resolutionX / 2;
-                        yPos += (resolutionY - 75) - (captionIndex * subtitleSpacing);
-                        log.info("bottom center");
-                        break;
-                    case "BOTTOM_LEFT":
-                        xPos += halfMaxLength + horizontalSpacing;
-                        yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
-                        log.info("bottom left");
-                        break;
-                    case "CENTER_LEFT":
-                        xPos += halfMaxLength + horizontalSpacing;
-                        yPos += (resolutionY / 2) - (((subtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
-                        log.info("center left");
-                        break;
-                    case "TOP_LEFT":
-                        xPos += halfMaxLength + horizontalSpacing;
-                        yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
-                        log.info("top left");
-                        break;
-                    case "TOP_CENTER":
-                        xPos += resolutionX / 2;
-                        yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
-                        log.info("top center");
-                        break;
-                    case "TOP_RIGHT":
-                        xPos += resolutionY - halfMaxLength - 2;
-                        yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
-                        log.info("top right");
-                        break;
-                    case "CENTER_RIGHT":
-                        xPos += resolutionX - halfMaxLength - horizontalSpacing;
-                        yPos += (resolutionY / 2) - (((subtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
-                        log.info("center right");
-                        break;
-                    default: //if there's any invalid input just show it in the bottom right
-                        /*xPos += resolutionX - halfMaxLength - 2;
-                        yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);*/
-                        xPos += resolutionX;
-                        yPos += resolutionY;
-                        log.info("bottom right");
-                        break;
+                //if there's any invalid input just show it in the bottom right
+                if (position.equals(BOTTOM_CENTER)) {
+                    xPos += (double) resolutionX / 2;
+                    yPos += (resolutionY - 75) - (captionIndex * subtitleSpacing);
+                    log.info("bottom center");
+                } else if (position.equals(BOTTOM_LEFT)) {
+                    xPos += halfMaxLength + horizontalSpacing;
+                    yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                    log.info("bottom left");
+                } else if (position.equals(MIDDLE_CENTER)) {
+                    xPos += halfMaxLength + horizontalSpacing;
+                    yPos += ((double) resolutionY / 2) - (((double) (subtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
+                    log.info("center left");
+                } else if (position.equals(TOP_LEFT)) {
+                    xPos += halfMaxLength + horizontalSpacing;
+                    yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                    log.info("top left");
+                } else if (position.equals(TOP_CENTER)) {
+                    xPos += (double) resolutionX / 2;
+                    yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                    log.info("top center");
+                } else if (position.equals(TOP_RIGHT)) {
+                    xPos += resolutionY - halfMaxLength - 2;
+                    yPos += (captionIndex * subtitleSpacing + 5 + verticalSpacing);
+                    log.info("top right");
+                } else if (position.equals(MIDDLE_RIGHT)) {
+                    xPos += resolutionX - halfMaxLength - horizontalSpacing;
+                    yPos += ((double) resolutionY / 2) - (((double) (subtitles.size() - 1) / 2) - captionIndex) * subtitleSpacing;
+                    log.info("center right");
+                } else if (position.equals(BOTTOM_RIGHT)) {
+                    xPos += resolutionX - halfMaxLength - 2;
+                    yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                    log.info("bottom right");
+                } else {
+                    //if there's any invalid input just show it in the bottom right
+                    xPos += resolutionX - halfMaxLength - 2;
+                    yPos += (resolutionY - 30) - (captionIndex * subtitleSpacing);
+                    log.info("Invalid Input: " + position);
                 }
 
-                xPos = Mth.clamp(xPos, 0, resolutionX - (subtitleWidth / 2));
+                xPos = Mth.clamp(xPos, 0, resolutionX - ((double) subtitleWidth / 2));
                 yPos = Mth.clamp(yPos, 0, resolutionY - (subtitleHeight));
 
                 log.info("xPos: " + xPos + " yPos: " + yPos);
-                RenderSystem.translatef(xPos, yPos, 0.0F);
+                RenderSystem.translatef((float) xPos, (float) yPos, 0.0F);
 
                 RenderSystem.scalef(scale.get(), scale.get(), 1.0F);
                 log.info("scale: " + scale.get());
@@ -224,8 +222,8 @@ public class SubtitleOverlayGui extends Gui implements SoundEventListener
                 ++captionIndex;
             }
             RenderSystem.disableBlend();
-            RenderSystem.popMatrix();
         }
+        RenderSystem.popMatrix();
     }
 
     @Override
